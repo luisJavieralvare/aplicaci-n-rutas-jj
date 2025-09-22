@@ -53,7 +53,7 @@ class ApiService {
     } catch (e) {
       print('Error obteniendo usuarios pendientes: $e');
     }
-    return [];
+    return null;
   }
 
   static Future<bool> aprobarUsuario(int id) async {
