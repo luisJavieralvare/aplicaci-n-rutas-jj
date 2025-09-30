@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import '../models/models.dart';
+import '../services/api_service.dart';
 
 class ProductosProvider extends ChangeNotifier {
-  List<dynamic> _productos = []; // Temporalmente dynamic
-  List<dynamic> _categorias = [];
+  List<Producto> _productos = [];
+  List<Categoria> _categorias = [];
   bool _isLoading = false;
   String? _error;
 
-  List<dynamic> get productos => _productos;
-  List<dynamic> get categorias => _categorias;
+  List<Producto> get productos => _productos;
+  List<Categoria> get categorias => _categorias;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -17,28 +19,7 @@ class ProductosProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Simulación de carga
-      await Future.delayed(const Duration(seconds: 1));
-      
-      // Datos simulados
-      _productos = [
-        {
-          'id': 1,
-          'nombre': 'Coca Cola 350ml',
-          'precio': 2500.0,
-          'stock': 100,
-          'categoria': {'id': 1, 'nombre': 'Bebidas'},
-          'codigoBarras': '7702001234567'
-        },
-        {
-          'id': 2,
-          'nombre': 'Papas Margarita',
-          'precio': 3000.0,
-          'stock': 50,
-          'categoria': {'id': 2, 'nombre': 'Snacks'},
-          'codigoBarras': '7702002234567'
-        }
-      ];
+      _productos = await ApiService.getProductos();
     } catch (e) {
       _error = 'Error cargando productos: $e';
     }
@@ -49,15 +30,29 @@ class ProductosProvider extends ChangeNotifier {
 
   Future<void> cargarCategorias() async {
     try {
-      _categorias = [
-        {'id': 1, 'nombre': 'Bebidas'},
-        {'id': 2, 'nombre': 'Snacks'},
-        {'id': 3, 'nombre': 'Dulces'}
-      ];
+      _categorias = await ApiService.getCategorias();
       notifyListeners();
     } catch (e) {
       _error = 'Error cargando categorías: $e';
       notifyListeners();
+    }
+  }
+  
+  Future<Producto?> buscarPorCodigoBarras(String codigo) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final producto = await ApiService.getProductoPorCodigoBarras(codigo);
+      _isLoading = false;
+      notifyListeners();
+      return producto;
+    } catch (e) {
+      _error = 'Error buscando producto por código de barras: $e';
+      _isLoading = false;
+      notifyListeners();
+      return null;
     }
   }
 

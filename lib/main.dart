@@ -5,32 +5,38 @@ import 'providers/auth_provider.dart';
 import 'providers/productos_provider.dart';
 import 'providers/mercancia_provider.dart';
 import 'providers/admin_provider.dart';
+import 'providers/factura_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/registro_mercancia_screen.dart';
+import 'screens/scanner_screen.dart';
+import 'screens/facturas_screen.dart';
+import 'screens/usuarios_pendientes_screen.dart';
+import 'screens/inventario_screen.dart';
+import 'screens/reportes_screen.dart';
 import 'services/connectivity_service.dart';
 import 'services/sync_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Inicializar Firebase
   try {
     await Firebase.initializeApp();
   } catch (e) {
-    print('Error inicializando Firebase: $e');
+    // En un proyecto real, aquí usarías un sistema de logging
   }
-  
-  // Inicializar servicios
+
+  // Inicializar servicios de conectividad y sincronización
   await ConnectivityService.init();
   await SyncService.iniciarSincronizacionAutomatica();
-  
+
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +46,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ProductosProvider()),
         ChangeNotifierProvider(create: (_) => MercanciaProvider()),
         ChangeNotifierProvider(create: (_) => AdminProvider()),
+        ChangeNotifierProvider(create: (_) => FacturaProvider()),
       ],
       child: MaterialApp(
         title: 'Rutas J-J',
@@ -73,7 +80,7 @@ class MyApp extends StatelessWidget {
 }
 
 class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({Key? key}) : super(key: key);
+  const AuthWrapper({super.key});
 
   @override
   Widget build(BuildContext context) {

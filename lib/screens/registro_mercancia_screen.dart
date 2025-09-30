@@ -3,11 +3,9 @@ import 'package:provider/provider.dart';
 import '../providers/productos_provider.dart';
 import '../providers/mercancia_provider.dart';
 import '../models/models.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class RegistroMercanciaScreen extends StatefulWidget {
-  const RegistroMercanciaScreen({Key? key}) : super(key: key);
+  const RegistroMercanciaScreen({super.key});
 
   @override
   State<RegistroMercanciaScreen> createState() => _RegistroMercanciaScreenState();
@@ -284,23 +282,27 @@ class _RegistroMercanciaScreenState extends State<RegistroMercanciaScreen>
 
   Future<void> _registrarMercancia(String tipo) async {
     if (_productoSeleccionado == null || _cantidadController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Complete todos los campos'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if(mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Complete todos los campos'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
 
     final cantidad = int.tryParse(_cantidadController.text);
     if (cantidad == null || cantidad <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ingrese una cantidad válida'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ingrese una cantidad válida'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
 
@@ -310,10 +312,10 @@ class _RegistroMercanciaScreenState extends State<RegistroMercanciaScreen>
       tipoRegistro: tipo,
     );
 
-    final success = await Provider.of<MercanciaProvider>(context, listen: false)
-        .registrarMercancia(request, _productoSeleccionado!);
+    final mercanciaProvider = Provider.of<MercanciaProvider>(context, listen: false);
+    final success = await mercanciaProvider.registrarMercancia(request, _productoSeleccionado!);
 
-    if (success && context.mounted) {
+    if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('$tipo registrada exitosamente'),
@@ -326,10 +328,10 @@ class _RegistroMercanciaScreenState extends State<RegistroMercanciaScreen>
       });
       // Recargar productos para actualizar stock
       Provider.of<ProductosProvider>(context, listen: false).cargarProductos();
-    } else if (context.mounted) {
+    } else if(mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error registrando $tipo'),
+          content: Text('Error registrando $tipo. ${mercanciaProvider.error ?? ''}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -342,11 +344,11 @@ class _RegistroMercanciaScreenState extends State<RegistroMercanciaScreen>
       cantidad: cantidad,
       tipoRegistro: 'DEVUELTA',
     );
+    
+    final mercanciaProvider = Provider.of<MercanciaProvider>(context, listen: false);
+    final success = await mercanciaProvider.registrarMercancia(request, producto);
 
-    final success = await Provider.of<MercanciaProvider>(context, listen: false)
-        .registrarMercancia(request, producto);
-
-    if (success && context.mounted) {
+    if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Devolución registrada exitosamente'),
@@ -354,9 +356,16 @@ class _RegistroMercanciaScreenState extends State<RegistroMercanciaScreen>
         ),
       );
       // Recargar mercancía llevada
-      Provider.of<MercanciaProvider>(context, listen: false).cargarMercanciaLlevadaHoy();
+      mercanciaProvider.cargarMercanciaLlevadaHoy();
       // Recargar productos para actualizar stock
       Provider.of<ProductosProvider>(context, listen: false).cargarProductos();
+    } else if(mounted) {
+       ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al registrar devolución. ${mercanciaProvider.error ?? ''}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

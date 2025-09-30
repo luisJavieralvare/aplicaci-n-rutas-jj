@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import '../models/models.dart';
+import '../services/api_service.dart';
 
 class AdminProvider extends ChangeNotifier {
-  List<dynamic> _usuariosPendientes = [];
-  List<dynamic> _reporteSemanal = [];
+  List<Usuario> _usuariosPendientes = [];
+  List<Factura> _reporteSemanal = [];
   bool _isLoading = false;
   String? _error;
 
-  List<dynamic> get usuariosPendientes => _usuariosPendientes;
-  List<dynamic> get reporteSemanal => _reporteSemanal;
+  List<Usuario> get usuariosPendientes => _usuariosPendientes;
+  List<Factura> get reporteSemanal => _reporteSemanal;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -17,18 +19,7 @@ class AdminProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Simulación de carga
-      await Future.delayed(const Duration(seconds: 1));
-      
-      _usuariosPendientes = [
-        {
-          'id': 2,
-          'nombre': 'Juan Pérez',
-          'correo': 'juan@example.com',
-          'estado': 'PENDIENTE',
-          'rol': 'TRABAJADOR'
-        }
-      ];
+      _usuariosPendientes = await ApiService.getUsuariosPendientes();
     } catch (e) {
       _error = 'Error cargando usuarios pendientes: $e';
     }
@@ -39,19 +30,34 @@ class AdminProvider extends ChangeNotifier {
 
   Future<bool> aprobarUsuario(int id) async {
     try {
-      // Simulación de aprobación
-      await Future.delayed(const Duration(seconds: 1));
-      
-      // Remover de la lista
-      _usuariosPendientes.removeWhere((user) => user['id'] == id);
-      notifyListeners();
-      return true;
+      final success = await ApiService.aprobarUsuario(id);
+      if (success) {
+        _usuariosPendientes.removeWhere((user) => user.id == id);
+        notifyListeners();
+      }
+      return success;
     } catch (e) {
       _error = 'Error aprobando usuario: $e';
       notifyListeners();
       return false;
     }
   }
+
+  Future<void> getReporteSemanal(String inicio, String fin) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _reporteSemanal = await ApiService.getReporteSemanal(inicio, fin);
+    } catch (e) {
+      _error = 'Error obteniendo el reporte semanal: $e';
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
 
   void clearError() {
     _error = null;

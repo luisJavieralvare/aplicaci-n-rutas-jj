@@ -6,7 +6,7 @@ import '../providers/productos_provider.dart';
 import '../models/models.dart';
 
 class BarcodeScannerScreen extends StatefulWidget {
-  const BarcodeScannerScreen({Key? key}) : super(key: key);
+  const BarcodeScannerScreen({super.key});
 
   @override
   State<BarcodeScannerScreen> createState() => _BarcodeScannerScreenState();
@@ -21,6 +21,15 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   void initState() {
     super.initState();
     _requestCameraPermission();
+  }
+  
+  @override
+  void reassemble() {
+    super.reassemble();
+    if (controller != null) {
+      controller!.pauseCamera();
+      controller!.resumeCamera();
+    }
   }
 
   Future<void> _requestCameraPermission() async {
@@ -66,11 +75,11 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
               ),
             ),
           ),
-          Expanded(
+          const Expanded(
             flex: 1,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              child: const Column(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
@@ -97,10 +106,10 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     this.controller = controller;
     controller.scannedDataStream.listen((scanData) {
       if (_isScanning && scanData.code != null) {
+        controller.pauseCamera();
         setState(() {
           _isScanning = false;
         });
-        controller.pauseCamera();
         _buscarProducto(scanData.code!);
       }
     });
@@ -122,29 +131,16 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       ),
     );
 
-    try {
-      final productosProvider = Provider.of<ProductosProvider>(context, listen: false);
-      final producto = await productosProvider.buscarPorCodigoBarras(codigo);
+    final productosProvider = Provider.of<ProductosProvider>(context, listen: false);
+    final producto = await productosProvider.buscarPorCodigoBarras(codigo);
 
-      Navigator.pop(context); // Cerrar dialog de carga
+    if (!mounted) return;
+    Navigator.pop(context); // Cerrar dialog de carga
 
-      if (producto != null && context.mounted) {
-        // Mostrar producto encontrado y opciones
-        _mostrarProductoEncontrado(producto);
-      } else if (context.mounted) {
-        _mostrarProductoNoEncontrado(codigo);
-      }
-    } catch (e) {
-      Navigator.pop(context); // Cerrar dialog de carga
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        _reanudarEscaneo();
-      }
+    if (producto != null) {
+      _mostrarProductoEncontrado(producto);
+    } else {
+      _mostrarProductoNoEncontrado(codigo);
     }
   }
 
@@ -167,6 +163,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
+              // TODO: Devolver el producto a la pantalla anterior
               _reanudarEscaneo();
             },
             child: const Text('Seleccionar'),
@@ -201,3 +198,10 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     });
     controller?.resumeCamera();
   }
+
+  @override
+  void dispose() {
+    controller?.dispose();
+    super.dispose();
+  }
+}
